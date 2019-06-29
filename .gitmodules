@@ -1,0 +1,4 @@
+[submodule "django_project/injector"]
+	path = django_project/injector
+	url = https://gitlab.com/mozio/pyinjector.git
+    branch = master

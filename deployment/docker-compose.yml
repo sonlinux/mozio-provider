@@ -1,0 +1,358 @@
+#
+# Production server with UWSGI configured to run on port 8080
+# and web configured to run directly on port 80
+#
+# docker-compose build
+# docker-compose up -d web
+#
+# See accompanying Make commands for easy collectstatic etc.
+version: "2"
+
+
+services:
+  smtp:
+    # Note you cannot scale if you use container_name
+    container_name: mozio-smtp
+    image: catatnight/postfix
+    hostname: postfix
+    environment:
+      # You could change this to something more suitable
+      - maildomain=mozio.com
+      - smtp_user=noreply:docker
+    restart: unless-stopped
+    # networks:
+    #   - mozio_backend
+
+  cache:
+    image: memcached
+    entrypoint:
+      - memcached
+      - -m 64
+    # networks:
+    #   - mozio_backend
+
+  db:
+    # Note you cannot scale if you use conteiner_name
+    container_name: mozio-db
+
+    # Using my db image
+    image: kartoza/postgis:9.6-2.4
+    volumes:
+      #- ./pg/postgres_data:/var/lib/postgresql
+      - ./backups:/backups
+    environment:
+      - USERNAME=docker
+      - PASS=docker
+    restart: on-failure:5
+    # networks:
+    #   - mozio_backend
+#        aliases:
+#           - db
+      #  Uncomment the next line to have an access with PhpMyAdmin or other db admin
+      # tool using localhost and port 23306 on your computer.
+      #  Only for development !
+    ports:
+      - "3306:3306"
+
+  uwsgi:
+    # Note you cannot scale if you use container_name
+    container_name: mozio-uwsgi
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    hostname: uwsgi
+#    depends_on:
+#      - db
+    links:
+      - db:db
+      - smtp:smtp
+      - flower:flower
+      - beat:beat
+      - worker:worker
+      - rabbitmq:rabbitmq
+      - redis:redis
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=mozio_core.settings.prod_docker
+      - VIRTUAL_HOST=mozio.mozio.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - ../django_project:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./app/import_files/:/app/import_files/
+      - ./logs:/var/log/
+    restart: on-failure:5
+#    user: root
+    # networks:
+    #   mozio_backend:
+    #     aliases:
+    #       - uwsgi
+  redis:
+    image: redis
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    # networks:
+    #   - mozio_backend
+
+  dbbackups:
+    # Note you cannot scale if you use conteiner_name
+    container_name: mozio-db-backups
+    image: kartoza/pg-backup:9.4
+    hostname: pg-backups
+    volumes:
+      - ./backups:/backups
+    links:
+      - db:db
+    environment:
+      # take care to let the project name below match that
+      # declared in the top of the makefile
+      - DUMPPREFIX=mozio
+      # These are all defaults anyway, but setting explicitly in
+      # case we ever want to ever use different credentials
+      - PGUSER=docker
+      - PGPASSWORD=docker
+      - PGPORT=5432
+      - PGHOST=db
+      - PGDATABASE=gis
+    restart: on-failure:5
+    # networks:
+    #   - mozio_backend
+
+  # This is normally the main entry point for a production server
+
+  web:
+    # Note you cannot scale if you use container_name
+    container_name: mozio-web
+    image: nginx
+    hostname: nginx
+    links:
+      - db
+      - uwsgi
+      - smtp
+    volumes:
+      - ./sites-enabled:/etc/nginx/conf.d:ro
+      # I dont use volumes_from as I want to use the ro modifier
+      - ./static:/home/web/static:ro
+      - ./media:/home/web/media:ro
+      - ./logs:/var/log/nginx
+    ports:
+      # - "65200:8080"
+      - "80:8080"
+    restart: unless-stopped
+    # networks:
+    #   mozio_backend:
+    #     aliases:
+    #       - mozio-web
+  # This is the entry point for a development server.
+  # Run with --no-deps to run attached to the services
+  # from produ environment if wanted
+  devweb:
+    # Note you cannot scale if you use container_name
+    container_name: mozio-dev-web
+    build:
+      context: ./docker
+      dockerfile: Dockerfile-dev
+    hostname: uwsgi
+    depends_on:
+      - db
+      - rabbitmq
+      - worker
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=mozio_core.settings.prod_docker
+      - PYTHONPATH=/home/web/django_project
+      - VIRTUAL_HOST=mozio.mozio.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - ../django_project:/home/web/django_project
+      - ./static:/home/web/static
+      - ./media:/home/web/media
+      - ./reports:/home/web/reports
+      - ./logs:/var/log/
+    ports:
+      # for django test server
+      - "65302:8080"
+      # for ssh
+      - "65303:22"
+    # networks:
+    #   - mozio_backend
+
+  btsync-db:
+    # BTSync backups for database dumps
+    image: kartoza/btsync
+    restart: unless-stopped
+    volumes:
+      # We mount RW so that we can use remove peer to clean up old backups off the server
+      - ./backups:/web:rw
+    env_file:
+      # The environment file should define two variables:
+      # SECRET: a RW btsync key if the server is a production server
+      #         a RO btsync key if it is staging or development machine
+      # DEVICE: a unique device name so you can recognise which host is being peered with in btsync
+      # See the btsync example env in this folder for a template
+      # NOTE:
+      # Do not version control the env file as anyone else could peer it and sync
+      # our database backups etc.
+      - btsync-db.env
+
+  btsync-media:
+    # BTSync backups for django media
+    image: kartoza/btsync
+    restart: unless-stopped
+    volumes:
+      # We mount RO as we do not really want peers to change this data
+      - ./media:/web:ro
+    env_file:
+      # The environment file should define two variables:
+      # SECRET: a RW btsync key if the server is a production server
+      #         a RO btsync key if it is staging or development machine
+      # DEVICE: a unique device name so you can recognise which host is being peered with in btsync
+      # See the btsync example env in this folder for a template
+      # NOTE:
+      # Do not version control the env file as anyone else could peer it and sync
+      # our media backups etc.
+      - btsync-media.env
+
+  rabbitmq:
+    image: library/rabbitmq
+    hostname: rabbitmq
+    container_name: rabbitmq
+    environment:
+      - RABBIT_PASSWORD=rabbit_test_password
+      - USER=rabbit
+      - RABBITMQ_NODENAME=rabbit
+    ports:
+      - "5672:5672"  # We forward this port because it's useful for debugging
+      - "15672:15672"  # Here, we can access RabbitMQ management plugin
+#    volumes:
+#      - ./rabbitmq:/var/lib/rabbitmq
+    restart: unless-stopped
+    # networks:
+    #   - mozio_backend
+
+  beat:
+    container_name: celery-beat
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    command: ['celery', '-A', 'mozio_base', 'beat','-l', 'debug',
+              '--pidfile', '/tmp/celeryd.pid']
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=mozio_core.settings.prod_docker
+      - PYTHONPATH=/home/web/django_project
+      - VIRTUAL_HOST=mozio.com
+      - VIRTUAL_PORT=8080
+      - C_FORCE_ROOT=true
+      - RABBITMQ_HOST=rabbitmq
+      - REDIS_HOST=redis-cache
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=amqp://rabbit:rabbit_test_password@rabbitmq:5672//
+    links:
+      - db
+      - redis
+      - rabbitmq:rabbitmq
+#      - cache:cache
+    volumes:
+      - ../django_project:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./reports:/home/web/reports
+      - ./app/import_files/:/app/import_files/
+      - ./logs:/var/log/
+    restart: always
+    # networks:
+    #   mozio_backend:
+    #     aliases:
+    #       - beat
+
+  worker:
+    container_name: celery-worker
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    command: ['celery', '-A', 'mozio_base', 'worker', '-l', 'info']
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=mozio_core.settings.prod_docker
+      - PYTHONPATH=/home/web/django_project
+      - VIRTUAL_HOST=mozio.com
+      - VIRTUAL_PORT=8080
+      - C_FORCE_ROOT=true
+      - RABBITMQ_HOST=rabbitmq
+      - REDIS_HOST=redis-cache
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=amqp://rabbit:rabbit_test_password@rabbitmq:5672//
+    links:
+      - db
+      - redis
+      - rabbitmq:rabbitmq
+    #      - cache:cache
+    volumes:
+      - ../django_project:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./app/import_files/:/app/import_files/
+      - ./logs:/var/log/
+    # networks:
+    #   mozio_backend:
+    #     aliases:
+    #       - worker
+  flower:
+    container_name: celery-flower
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    command: ['celery', 'flower', '-A', 'mozio_base' , 'flower', 'l', 'info']
+    ports:
+      - "5555:5555"
+    environment:
+      - DATABASE_NAME=gis
+      - DATABASE_USERNAME=docker
+      - DATABASE_PASSWORD=docker
+      - DATABASE_HOST=db
+      - DJANGO_SETTINGS_MODULE=mozio_core.settings.prod_docker
+      - PYTHONPATH=/home/web/django_project
+      - VIRTUAL_HOST=mozio.mozio.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - REDIS_HOST=redis
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - BROKER_URL=amqp://rabbit:rabbit_test_password@rabbitmq:5672//
+    links:
+      - db:db
+      - redis
+      - beat:beat
+      - worker:worker
+      - rabbitmq:rabbitmq
+    volumes:
+      - ../django_project:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./app/import_files/:/app/import_files/
+      - ./logs:/var/log/
+    # networks:
+    #   mozio_backend:
+    #     aliases:
+    #       - flower
+
+# networks:
+#   mozio_backend:

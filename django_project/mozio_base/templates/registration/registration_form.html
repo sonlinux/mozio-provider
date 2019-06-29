@@ -1,0 +1,92 @@
+{% extends 'registration/base.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block head %}
+<title>Register</title>
+{% endblock %}
+
+{% block content %}
+<div class="login-register register-form" style="background-image:url({% static 'assets/images/background/login-register.jpg' %})">
+    <div class="login-box card">
+        <div class="card-body wizard-content">
+            <div class="form-group">
+                <div class="col-xs-12 text-center">
+                    <div class="user-thumb text-center">
+                        <img alt="mozio" width="120" src="{% static 'assets/images/logo-light-text.png' %}">
+                    </div>
+                </div>
+            </div>
+            <form class="validation-wizard wizard-circle form-material" id="loginform" method="post">
+                {% csrf_token %}
+                <!-- Step 1 -->
+                <h6>Personal Info</h6>
+                <section>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                {{ form.first_name|add_class:"form-control"|attr:"placeholder:First name"}}
+                                <div class="form-control-feedback text-danger">{{ form.first_name.errors }}</div>
+                                <small class="form-text text-muted">{{ form.first_name.help_text|safe }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                {{ form.last_name|add_class:"form-control"|attr:"placeholder:Last name"}}
+                                <div class="form-control-feedback text-danger">{{ form.last_name.errors }}</div>
+                                <small class="form-text text-muted">{{ form.last_name.help_text|safe }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                {{ form.email|add_class:"form-control"|attr:"placeholder:Email address"}}
+                                <div class="form-control-feedback text-danger">{{ form.email.errors }}</div>
+                                <small class="form-text text-muted">{{ form.email.help_text|safe }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                {{ form.email2|add_class:"form-control"|attr:"placeholder:Repeat email address"}}
+                                <div class="form-control-feedback text-danger">{{ form.email2.errors }}</div>
+                                <small class="form-text text-muted">{{ form.email2.help_text|safe }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Step 2 -->
+                <h6>Account</h6>
+                <section>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                {{ form.username|add_class:"form-control"|attr:"placeholder:Username"}}
+                                <div class="form-control-feedback text-danger">{{ form.username.errors }}</div>
+                                <small class="form-text text-muted">{{ form.username.help_text|safe }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                {{ form.password1|add_class:"form-control"|attr:"placeholder:Password"}}
+                                <div class="form-control-feedback text-danger">{{ form.password1.errors }}</div>
+                                <small class="form-text text-muted">{{ form.password1.help_text|safe }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                {{ form.password2|add_class:"form-control"|attr:"placeholder:Password confirmation"}}
+                                <div class="form-control-feedback text-danger">{{ form.password2.errors }}</div>
+                                <small class="form-text text-muted">{{ form.password2.help_text|safe }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </form>
+            <div class="form-group m-b-0">
+                <div class="col-sm-12 text-center">
+                    <p>Already have an account? <a href="{% url 'auth_login' %}" class="text-info m-l-5"><b>Sign In</b></a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

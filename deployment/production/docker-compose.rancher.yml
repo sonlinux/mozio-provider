@@ -1,0 +1,113 @@
+version: '2'
+services:
+
+  smtp:
+    image: catatnight/postfix
+    hostname: postfix
+    environment:
+      # You could change this to something more suitable
+      - maildomain=mozio.com
+      - smtp_user=noreply:docker
+    networks:
+      - backend
+
+  db:
+    # Note you cannot scale if you use container_name
+     container_name: mozio-db
+     # Using official db image hence no need of repo specification.
+     image: mysql:5.7
+     volumes:
+      - ./db_data:/var/lib/mysql
+      - ./backups:/backups
+     restart: unless-stopped
+     environment:
+      - MYSQL_ROOT_PASSWORD=docker_C0nt41n3r!
+      - MYSQL_DATABASE=mozio
+      - MYSQL_USER=docker
+      - MYSQL_PASSWORD=docker
+      - MYSQL_ROOT_HOST=db
+    networks:
+      backend:
+        aliases:
+            - db
+  #  Uncomment the next line to have an access with PhpMyAdmin or other db admin
+  # tool using localhost and port 23306 on your computer.
+  #  Only for development !
+   ports:
+     - "23306:3306"
+
+  uwsgi:
+    image: mukomalison/docker-mozio-uwsgi:latest
+    hostname: uwsgi
+    environment:
+      - MYSQL_ROOT_PASSWORD=docker_C0nt41n3r!
+      - MYSQL_DATABASE=mozio
+      - MYSQL_USER=docker
+      - MYSQL_PASSWORD=docker
+      - MYSQL_ROOT_HOST=db
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - VIRTUAL_HOST=dev.mozio.com
+      - VIRTUAL_PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+    volumes:
+      - mozio-static:/home/web/static:rw
+      - mozio-media:/home/web/media:rw
+      - mozio-reports:/home/web/reports
+      - mozio-logs:/var/log/
+    user: root
+    networks:
+      backend:
+        aliases:
+          - uwsgi
+
+  dbbackups:
+    # Note you cannot scale if you use container_name
+    container_name: mozio-db-backups
+    image: yloeffler/mysql-backup
+    hostname: mysql-backups
+    volumes:
+      - ./backups:/backups
+    environment:
+      # take care to let the project name below match that
+      # declared in the top of the makefile
+      - DUMPPREFIX=MYSQL_mozio
+      # These are all defaults anyway, but setting explicitly in
+      # case we ever want to ever use different credentials
+      - MYSQL_ROOT_PASSWORD=docker_C0nt41n3r!
+      - MYSQL_DATABASE=mozio
+      - MYSQL_PORT=3306
+      - MYSQL_USER=docker
+      - MYSQL_PASSWORD=docker
+      - MYSQL_ROOT_HOST=db
+    networks:
+      - backend
+
+  # This is normally the main entry point for a production server
+  web:
+    image: mukomalison/mozio_nginx:latest
+    hostname: nginx
+    depends_on:
+      - uwsgi
+      - db
+    volumes:
+      # I dont use volumes_from as I want to use the ro modifier
+      - mozio-static:/home/web/static:ro
+      - mozio-media:/home/web/media:ro
+      - mozio-logs:/var/log/nginx
+    ports:
+      - "80:8080"
+    networks:
+      - backend
+
+  rabbitmq:
+    image: library/rabbitmq
+    hostname: rabbitmq
+    environment:
+      - RABBIT_PASSWORD=rabbit_test_password
+      - USER=rabbit_user
+      - RABBITMQ_NODENAME=rabbit
+    networks:
+      - backend
+
+networks:
+  backend:

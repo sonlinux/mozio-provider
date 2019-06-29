@@ -1,0 +1,159 @@
+{% load static %}
+<header class="topbar">
+    <nav class="navbar top-navbar navbar-expand-md navbar-light">
+        <!-- ============================================================== -->
+        <!-- Logo -->
+        <!-- ============================================================== -->
+        <div class="navbar-header" style="line-height: 68px;">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                <!-- Logo icon -->
+                <b>
+                    <!-- Dark Logo icon -->
+
+{#                    <img src="{% static 'assets/images/logo-text.png' %}" alt="mozio" class="dark-logo" width="60" />#}
+                    <img src="{% static 'assets/images/mozio-logo-beta.png' %}" alt="mozio" class="dark-logo" width="60" />
+                    <!-- Light Logo icon -->
+                    <img src="{% static 'assets/images/logo-light-text.png' %}" alt="mozio" class="light-logo" width="60" />
+                </b>
+                <!--End Logo icon -->
+                <!-- Logo text -->
+                <span>
+                    <!-- dark Logo text -->
+{#                    <img src="{% static 'assets/images/logo-text.png' %}" alt="mozio" class="dark-logo" />#}
+                    <img src="{% static 'assets/images/mozio-logo-beta-text.png' %}" alt="mozio" class="dark-logo" />
+                     <!-- Light Logo text -->
+                    <img src="{% static 'assets/images/logo-light-text.png' %}" alt="mozio" class="light-logo" />
+                </span>
+            </a>
+        </div>
+        <!-- ============================================================== -->
+        <!-- End Logo -->
+        <!-- ============================================================== -->
+        <div class="navbar-collapse">
+            <!-- ============================================================== -->
+            <!-- toggle and nav items -->
+            <!-- ============================================================== -->
+            <ul class="navbar-nav mr-auto mt-md-0 ">
+                <!-- This is  -->
+                <li class="nav-item"> <a class="nav-link nav-toggler hidden-md-up text-muted waves-effect waves-dark" href="javascript:void(0)"><i class="ti-menu"></i></a> </li>
+                <li class="nav-item"> <a class="nav-link sidebartoggler hidden-sm-down text-muted waves-effect waves-dark" href="javascript:void(0)"><i class="icon-arrow-left-circle"></i></a> </li>
+                <!-- ============================================================== -->
+                <!-- Comment -->
+                <!-- ============================================================== -->
+                <li class="nav-item dropdown" style="z-index:1;">
+                    <a class="nav-link dropdown-toggle text-muted text-muted waves-effect waves-dark" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> <i class="mdi mdi-message"></i>
+                        {% if messages %}
+                        <div class="notify"> <span class="heartbit"></span> <span class="point"></span> </div>
+                        {% endif %}
+                    </a>
+                    <div class="dropdown-menu mailbox animated bounceInDown">
+                        <ul>
+                            <li>
+                                <div class="drop-title">Notifications</div>
+                            </li>
+                            <li>
+                                <div class="message-center">
+                                    <!-- Message -->
+                                    {% for message in messages %}
+                                        <a href="#">
+                                            <div class="btn btn-info btn-circle"><i class="ti-settings"></i></div>
+                                            <div class="mail-contnet">
+                                                <h5>Processing</h5> <span class="mail-desc">{{ message }}</span> <span class="time">{% now "H:i" %}</span></div>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </li>
+                            <li class="hide">
+                                <a class="nav-link text-center" href="javascript:void(0);"> <strong>Check all notifications</strong> <i class="fa fa-angle-right"></i> </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle btn btn-primary"
+                       href="https://mozio.com/contact/" target="_blank">Support</a>
+                </li>
+                <!-- ============================================================== -->
+                <!-- End Comment -->
+                <!-- ============================================================== -->
+                <!-- ============================================================== -->
+                <!-- Alert -->
+                <!-- ============================================================== -->
+                {% if not user.profile.is_verified %}
+                <li class="nav-item dropdown mega-dropdown {% if not user.profile.is_verified %}show{% endif %}">
+                    <a class="nav-link dropdown-toggle text-muted waves-effect waves-dark" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="mdi mdi-account-alert"></i><div class="notify"> <span class="heartbit"></span> <span class="point"></span> </div>
+                    </a>
+                    <div class="dropdown-menu animated bounceInDown bg-info alert-dropdown {% if not user.profile.is_verified %}show{% endif %}">
+                        <div class="alert-bar">
+                            <div class="alert-content">
+                                <div class="alert-icon">
+                                    <i class="mdi mdi-email-outline"></i>
+                                </div>
+                                <div class="alert-text">
+                                    <strong>Verification Required</strong>
+                                    <p>Hey {{user.first_name}}, before you can begin mailing from mozio, you need to activate your account. Please click the "Activate Account" link on the email we sent to you at {{user.email}}.</p>
+                                </div>
+                            </div>
+                            <div class="alert-control">
+                                <form name="resend_form" method="POST" action="{% url 'resend_verification_email' %}">
+                                    {% csrf_token %}
+                                    <button class="btn btn-block btn-outline-white"><i class=""></i> Resend Email</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                {% endif %}
+                <!-- ============================================================== -->
+                <!-- End Alert -->
+                <!-- ============================================================== -->
+            </ul>
+            <!-- ============================================================== -->
+            <!-- User profile and search -->
+            <!-- ============================================================== -->
+            <ul class="navbar-nav my-lg-0">
+                <li class="nav-item hidden-sm-down hide">
+                    <form class="app-search">
+                        <input type="text" class="form-control" placeholder="Search for..."> <a class="srh-btn"><i class="ti-search"></i></a>
+                    </form>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted waves-effect waves-dark" href="" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}" alt="Avatar" class="profile-pic" />
+                        {% else %}
+                        <img src="{% static 'assets/images/users/default.jpg' %}" alt="Avatar" class="profile-pic" />
+                        {% endif %}
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right animated flipInY">
+                        <ul class="dropdown-user">
+                            <li>
+                                <div class="dw-user-box">
+                                    <div class="u-img">
+                                       {% if user.profile.avatar %}
+                                        <img src="{{ user.profile.avatar.url }}" alt="Avatar" />
+                                        {% else %}
+                                        <img src="{% static 'assets/images/users/default.jpg' %}" alt="Avatar" />
+                                        {% endif %}
+                                    </div>
+                                    <div class="u-text">
+                                        <h4>{{user.first_name|capfirst}} {{user.last_name|capfirst}}</h4>
+                                        <p class="text-muted">{{user.email}}</p><a href="{% url 'profile' %}" class="btn btn-rounded btn-danger btn-sm">View Profile</a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{% url 'lock' %}"><i class="mdi mdi-lock-outline"></i> Lock</a></li>
+                            <li><a href="{% url 'auth_logout' %}"><i class="mdi mdi-power"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
+<!-- ============================================================== -->
+<!-- End Topbar header -->
+<!-- ============================================================== -->

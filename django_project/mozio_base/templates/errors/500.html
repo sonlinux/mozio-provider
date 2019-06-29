@@ -1,0 +1,19 @@
+{% extends 'errors/base.html' %}
+{% load static %}
+
+{% block head %}
+<title>500 Internal Server Error</title>
+{% endblock %}
+
+{% block content %}
+<div class="error-body text-center">
+	<div class="text-center m-b-20">
+        <img alt="mozio" width="180" src="{% static 'assets/images/logo-light-text.png' %}">
+    </div>
+    <h1>500</h1>
+    <h3 class="text-uppercase">Something went wrong!</h3>
+    <p class="text-muted m-t-30 m-b-30">Try that again, and if it still doesn`t work, let us know.</p>
+    <p class="text-muted m-t-30 m-b-30">Incident ID: {{ request.sentry.id }}</p>
+    <a href="{% url 'dashboard' %}" class="btn btn-info btn-rounded waves-effect waves-light m-b-40">Back to home</a>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'registration/base.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block head %}
+<title>Lock</title>
+{% endblock %}
+
+{% block content %}
+<div class="login-register" style="background-image:url({% static 'assets/images/background/login-register.jpg' %})">
+    <div class="login-box card">
+        <div class="card-body">
+            <form class="form-horizontal form-material" id="loginform" action="{% url 'unlock' %}" method="post" autocomplete="off" novalidate="">
+                {% csrf_token %}
+                <div class="form-group">
+                    <div class="col-xs-12 text-center">
+                        <div class="user-thumb text-center">
+                            <img alt="mozio" width="120" src="{% static 'assets/images/logo-light-text.png' %}">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-xs-12 text-center">
+                        <div class="user-thumb text-center">
+                            {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" width="100" class="img-circle" alt="Avatar" />
+                            {% else %}
+                            <img src="{% static 'assets/images/users/default.jpg' %}" width="100" class="img-circle" alt="Avatar" />
+                            {% endif %}
+                            <h3>{{user.first_name|capfirst}} {{user.last_name|capfirst}}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-xs-12">
+                        <input class="form-control" name="password" type="password" placeholder="Password" required="" autocomplete="off" autofocus="">
+                    </div>
+                </div>
+                <div class="form-group text-center">
+                    <div class="col-xs-12">
+                        <button class="btn btn-info btn-lg btn-block text-uppercase waves-effect waves-light" type="submit">Login</button>
+                    </div>
+                </div>
+                <div class="form-group text-center">
+                    <div class="col-xs-12">
+                        <a class="" href="{% url 'auth_logout' %}">Not {{user.first_name|capfirst}} {{user.last_name|capfirst}}?</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

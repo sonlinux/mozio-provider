@@ -1,0 +1,91 @@
+{% load static %}
+
+<!-- ============================================================== -->
+<!-- Left Sidebar - style you can find in sidebar.scss  -->
+<!-- ============================================================== -->
+<aside class="left-sidebar">
+    <!-- Sidebar scroll-->
+    <div class="scroll-sidebar">
+        <!-- User profile -->
+        <div class="user-profile">
+            <!-- User profile image -->
+            <a href="{% url 'profile' %}">
+                <div class="profile-img">
+                    {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="Avatar" />
+                    {% else %}
+                    <img src="{% static 'assets/images/users/default.jpg' %}" alt="Avatar" />
+                    {% endif %}
+                </div>
+            </a>
+            <!-- User profile text-->
+            <div class="profile-text"> <a href="#" class="dropdown-toggle link u-dropdown" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="true">{{user.first_name|capfirst}} {{user.last_name|capfirst}} <span class="caret"></span></a>
+                <div class="dropdown-menu animated flipInY">
+                    <a href="{% url 'profile' %}" class="dropdown-item"><i class="mdi mdi-account-outline"></i> My Profile</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="{% url 'lock' %}" class="dropdown-item"><i class="mdi mdi-lock-outline"></i> Lock</a>
+                    <a href="{% url 'auth_logout' %}" class="dropdown-item"><i class="mdi mdi-power"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+        <!-- End User profile text-->
+        <!-- Sidebar navigation-->
+        <nav class="sidebar-nav">
+            <ul id="sidebarnav">
+                <li class="nav-small-cap"></li>
+                <li>
+                    <a href="{% url 'dashboard' %}"><i class="mdi mdi-home"></i><span class="hide-menu">Dashboard</span></a>
+                </li>
+                <li>
+                    <a class="has-arrow " href="{% url 'mailinglist-list' %}" aria-expanded="false"><i class="mdi mdi-email"></i><span class="hide-menu">Mailing Lists</span></a>
+                    <ul aria-expanded="false" class="collapse">
+                        <li><a href="{% url 'mailinglist-add' %}"><i class="mdi mdi-plus-circle"></i> Add New</a></li>
+                        <li><a href="{% url 'mailinglist-list' %}"><i class="mdi mdi-format-list-numbers"></i> View All</a></li>
+                        <li style="border-bottom: 1px solid #f0f0f0;"><a href="{% url 'segment-list' %}"><i class="mdi mdi-message-settings-variant"></i> Segments</a></li>
+                        {% for mailinglist in user_mailinglists %}
+                        <li><a class="has-arrow" href="{% url 'mailinglist-recipients' mailinglist.id %}" aria-expanded="false"><i class="mdi mdi-access-point"></i> {{ mailinglist.name }}</a>
+                            <ul aria-expanded="false" class="collapse">
+                                <li><a href="{% url 'mailinglist-update' mailinglist.id %}"><i class="fa fa-cog fa-fw"></i> Properties</a></li>
+                                <li><a href="{% url 'mailinglist-recipients' mailinglist.id %}"><i class="fa fa-address-book-o fa-fw"></i> Recipients</a></li>
+                                <li><a href="{% url 'mailinglist-broadcasts' mailinglist.id %}"><i class="fa fa-microphone fa-fw"></i> Broadcasts</a></li>
+                            </ul>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                <li class="nav-devider"></li>
+                {% if user.is_superuser %}
+                <li class="nav-small-cap">Administrator</li>
+                <li>
+                    <a href="{% url 'user-list' %}"><i class="mdi mdi-human-child"></i><span class="hide-menu">Users</span></a>
+                </li>
+                <li>
+                    <a class="has-arrow" href="#" aria-expanded="false"><i class="mdi mdi-server-network"></i><span class="hide-menu">DevOps</span></a>
+                    <ul aria-expanded="false" class="collapse">
+                        <li><a href="{% url 'admin:index' %}" target="_blank"><i class="fa fa-external-link"></i> Django admin</a></li>
+                        <li><a href="{% url 'devops:django-settings' %}"><i class="fa fa-gears"></i> Django settings</a></li>
+                        <li><a href="/" onclick="javascript:event.target.port=5555" target="_blank"><i class="fa fa-external-link"></i> Flower</a></li>
+                        <li><a href="https://sentry.io/mozio-llc/" target="_blank"><i class="fa fa-external-link"></i> Sentry</a></li>
+                        <li><a href="https://mozio.slack.com" target="_blank"><i class="fa fa-external-link"></i> Slack</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="/api/v1/docs/" target="_blank"><i class="mdi mdi-file-document-box"></i><span class="hide-menu">API Documentation</span></a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        <!-- End Sidebar navigation -->
+    </div>
+    <!-- End Sidebar scroll-->
+    <!-- Bottom points-->
+    <div class="sidebar-footer">
+        <!-- item-->
+        <a href="{% url 'profile' %}" class="link" data-toggle="tooltip" title="Profile"><i class="mdi mdi-account-outline"></i></a>
+        <!-- item-->
+        <a href="{% url 'lock' %}" class="link" data-toggle="tooltip" title="Lock"><i class="mdi mdi-lock-outline"></i></a>
+        <!-- item-->
+        <a href="{% url 'auth_logout' %}" class="link" data-toggle="tooltip" title="Logout"><i class="mdi mdi-power"></i></a>
+    </div>
+    <!-- End Bottom points-->
+</aside>

@@ -1,0 +1,164 @@
+{% load static %}
+{% load staticfiles %}
+{% load tz %}
+{% get_current_timezone as TIME_ZONE %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    {% block head %}{% endblock %}
+
+    <!-- Favicon icon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'assets/images/favicon.png' %}">
+    <!--<title>Monster Admin Template - Responsive web app kit dashboard</title>-->
+    <!-- Bootstrap Core CSS -->
+    <link href="{% static 'assets/plugins/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/plugins/prism/prism.css' %}" rel="stylesheet">
+    <!-- Sweet-Alert  -->
+    <link href="{% static 'assets/plugins/sweetalert/sweetalert.css' %}" rel="stylesheet">
+    <!-- TOAST -->
+    <link href="{% static 'assets/plugins/toast-master/css/jquery.toast.css' %}" rel="stylesheet">
+    {% block body_css %} {% endblock %}
+    <!-- Custom CSS -->
+    <link href="{% static 'main/css/style.css' %}" rel="stylesheet">
+    <!-- You can change the theme colors from here -->
+    <link href="{% static 'main/css/colors/blue.css' %}" id="theme" rel="stylesheet">
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body class="fix-header fix-sidebar card-no-border">
+    {% include '_preloader.html' %}
+
+    <!-- ============================================================== -->
+    <!-- Main wrapper - style you can find in pages.scss -->
+    <!-- ============================================================== -->
+    <div id="main-wrapper">
+        {% include '_navbar.html' %}
+        {% include '_sidebar.html' %}
+
+    <!-- ============================================================== -->
+    <!-- Page wrapper  -->
+    <!-- ============================================================== -->
+    <div class="page-wrapper">
+        <!-- ============================================================== -->
+        <!-- Container fluid  -->
+        <!-- ============================================================== -->
+        <div class="container-fluid">
+            <!-- ============================================================== -->
+            <!-- Bread crumb and right sidebar toggle -->
+            <!-- ============================================================== -->
+            <div class="row page-titles">
+                <div class="col-md-6 col-lg-7 align-self-center">
+                    <h3 class="text-themecolor m-b-0 m-t-0">{% block title %}{% endblock %}</h3>
+                    <ol class="breadcrumb">
+                        {% block breadcrumbs %}
+                            <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                        {% endblock %}
+                    </ol>
+                </div>
+                <div class="col-md-6 col-lg-5 align-self-center">
+                    <div class="dropdown pull-right m-r-10 hidden-sm-down">
+                        <button class="btn btn-secondary" type="button">
+                            <span>{% now "jS F Y" %} {{ TIME_ZONE }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- ============================================================== -->
+            <!-- End Bread crumb and right sidebar toggle -->
+            <!-- ============================================================== -->
+
+           {% block content %} {% endblock %}
+        </div>
+        <!-- ============================================================== -->
+        <!-- End Container fluid  -->
+        <!-- ============================================================== -->
+        {% include '_footer.html' %}
+        {% include '_session_timeout.html' %}
+    </div>
+    <!-- ============================================================== -->
+    <!-- End Page wrapper  -->
+    <!-- ============================================================== -->
+
+    <!-- ============================================================== -->
+    <!-- All Jquery -->
+    <!-- ============================================================== -->
+    <script src="{% static 'assets/plugins/jquery/jquery.min.js' %}"></script>
+    <!-- Bootstrap tether Core JavaScript -->
+    <script src="{% static 'assets/plugins/bootstrap/js/popper.min.js' %}"></script>
+    <script src="{% static 'assets/plugins/bootstrap/js/bootstrap.min.js' %}"></script>
+    <!-- slimscrollbar scrollbar JavaScript -->
+    <script src="{% static 'main/js/jquery.slimscroll.js' %}"></script>
+    <!--Wave Effects -->
+    <script src="{% static 'main/js/waves.js' %}"></script>
+    <!--Menu sidebar -->
+    <script src="{% static 'main/js/sidebarmenu.js' %}"></script>
+    <!--stickey kit -->
+    <script src="{% static 'assets/plugins/sticky-kit-master/dist/sticky-kit.min.js' %}"></script>
+    <!-- Sweet-Alert  -->
+    <script src="{% static 'assets/plugins/sweetalert/sweetalert.min.js' %}"></script>
+    <!-- TOAST  -->
+    <script src="{% static 'assets/plugins/toast-master/js/jquery.toast.js' %}"></script>
+    <!-- Session-timeout-idle -->
+    <script src="{% static 'assets/plugins/session-timeout/idle/jquery.idletimeout.js' %}"></script>
+    <script src="{% static 'assets/plugins/session-timeout/idle/jquery.idletimer.js' %}"></script>
+    <script src="{% static 'assets/plugins/session-timeout/idle/session-timeout-idle-init.js' %}"></script>
+    <!--Custom JavaScript -->
+    {% block body_js %} {% endblock %}
+    <script src="{% static 'main/js/custom.min.js' %}"></script>
+    {% if not user.profile.is_verified %}
+    <script>
+        $(document).ready(function() {
+            "use strict";
+
+            $(document).on('submit', 'form[name="resend_form"]', function(e) {
+                e.preventDefault();
+
+                var frm = $(this),
+                    btn = $(this).find('button');
+                btn.addClass('disabled');
+                btn.find('i').addClass('fa fa-spinner fa-pulse');
+
+                $.ajax({
+                    type: frm.attr('method'),
+                    url: frm.attr('action'),
+                    data: frm.serialize(),
+                    success: function(data) {
+                        btn.removeClass('disabled');
+                        btn.find('i').removeClass('fa fa-spinner fa-pulse');
+                        if(data.success)
+                            swal("Done", 'Verification link has been sent to {{user.email}}. Please check its inbox to continue activating.', "success");
+                        else
+                            swal("Failed", "Failed to send account activation email. Please try again later.", "error");
+                    },
+                    error: function (data) {
+                        btn.removeClass('disabled');
+                        btn.find('i').removeClass('fa fa-spinner fa-pulse');
+                        swal("Failed", "Unexpected error occured. Please try again later.", "error");
+                    }
+                });
+            });
+        });
+    </script>
+    {% endif %}
+    {% if messages %}
+    <script type="text/javascript">
+        $(document).ready(function() {
+            {% for message in messages %}
+                swal('{{ message.tags | capfirst }}', '{{ message }}', "{{ message.tags }}");
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

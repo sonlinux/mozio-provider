@@ -1,0 +1,42 @@
+{% extends 'registration/base.html' %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block head %}
+<title>Resend Verification Email</title>
+{% endblock %}
+
+{% block content %}
+<div class="login-register" style="background-image:url({% static 'assets/images/background/login-register.jpg' %})">
+    <div class="login-box card">
+        <div class="card-body">
+            <form class="form-horizontal form-material" id="loginform" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <div class="col-xs-12 text-center">
+                        <div class="user-thumb text-center">
+                            <img alt="mozio" width="120" src="{% static 'assets/images/logo-light-text.png' %}">
+                        </div>
+                    </div>
+                </div>
+                <h3 class="box-title m-b-30">Resend Verification Email</h3>
+                <div class="form-group">
+                    <div class="col-xs-12">
+                        <input class="form-control" name="email" type="text" placeholder="Email address" required="" autocomplete="off" autofocus="">
+                    </div>
+                </div>
+                <div class="form-group text-center m-t-20">
+                    <div class="col-xs-12">
+                        <button class="btn btn-info btn-lg btn-block text-uppercase waves-effect waves-light" type="submit">Send</button>
+                    </div>
+                </div>
+                <div class="form-group m-b-0">
+                    <div class="col-sm-12 text-center">
+                        <p>Already activated? <a href="{% url 'auth_login' %}" class="text-info m-l-5"><b>Sign In</b></a></p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
